@@ -9,15 +9,34 @@ from psycopg2 import sql
 
 
 def createTables():
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
 
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
 
 def clearTables():
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
 
 
 def dropTables():
-    pass
+    conn = None
+    try:
+        conn = Connector.DBConnector()
+    except Exception as e:
+        print(e)
+    finally:
+        conn.close()
 
 
 def addFile(file: File) -> Status:
