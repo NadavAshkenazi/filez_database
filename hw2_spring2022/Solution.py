@@ -402,9 +402,10 @@ def addFileToDisk(file: File, diskID: int) -> Status:
         query = sql.SQL("""BEGIN;
                             UPDATE Disks
                             set free_space = Disks.free_space - 
-                                (SELECT Files.size_needed 
+                                (SELECT Files.size_needed
                                 FROM Files
-                                WHERE Files.id = {file_ID});
+                                WHERE Files.id = {file_ID})
+                            WHERE Disks.id = {disk_ID};
                                                 
                             INSERT INTO FilesOfDisk(File_id, Disk_id)
                             VALUES ({file_ID}, {disk_ID});
@@ -442,17 +443,20 @@ def removeFileFromDisk(file: File, diskID: int) -> Status:
         conn = Connector.DBConnector()
         query = sql.SQL("""BEGIN;
                             UPDATE Disks
-                            set free_space = free_space + 
-                            COALESCE ((SELECT Files.size 
+                            set free_space = Disks.free_space + 
+                            COALESCE ((SELECT Files.size_needed 
                                         FROM FilesOfDisk, Files
                                          WHERE {disk_id} = FilesOfDisk.Disk_id
                                                 AND FilesOfDisk.File_id = Files.id 
-                                                AND Files.id = {file_id}), 0);
-                            DELETE FROM FilesOfDisk WHERE File_id=({file_id)})
-                            COMMIT;""").format(disk_id=sql.Literal(diskID), file_id=sql.Literal(file.getFileID()))
+                                                AND Files.id = {file_id}), 0)
+                            WHERE Disks.id = {disk_id};
+                            DELETE 
+                            FROM FilesOfDisk 
+                            WHERE FilesOfDisk.File_id={file_id};
+                            """).format(disk_id=sql.Literal(diskID), file_id=sql.Literal(file.getFileID()))
         rows_effected, _ = conn.execute(query)
-
-    except Exception:
+        conn.commit()
+    except Exception as e:
         ret = Status.ERROR
         conn.rollback()
 

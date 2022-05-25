@@ -53,12 +53,12 @@ class Test(AbstractTest):
         RAM5 = RAM(5, "DELL", 10)
         RAM6 = RAM(6, "DELL", 10)
 
-        file1 = File(1, "wav", 10)
-        file2 = File(2, "wav", 10)
-        file3 = File(3, "wav", 10)
-        file4 = File(4, "mp4", 20)
-        file5 = File(5, "mp4", 30)
-        file6 = File(6, "mp4", 40)
+        file1 = File(1, "wav", 1)
+        file2 = File(2, "wav", 2)
+        file3 = File(3, "wav", 3)
+        file4 = File(4, "mp4", 4)
+        file5 = File(5, "mp4", 5)
+        file6 = File(6, "mp4", 6)
 
         # disks
         self.assertEqual(Status.OK, Solution.addDisk(disk1), "Should work")
@@ -107,7 +107,9 @@ class Test(AbstractTest):
 
         self.assertEqual(Status.OK, Solution.addDiskAndFile(disk6, file6), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file6, 6), "Should work")
-
+        self.assertEqual(24, Solution.getDiskByID(6).getFreeSpace(), "Should work")
+        self.assertEqual(Status.OK, Solution.removeFileFromDisk(file6, 6), "Should work")
+        self.assertEqual(30, Solution.getDiskByID(6).getFreeSpace(), "Should work")
         pass
 
 
