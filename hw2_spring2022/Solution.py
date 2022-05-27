@@ -71,6 +71,26 @@ def createTables():
                         FROM Disks, Files
                         WHERE Files.size_needed <= Disks.free_space;
                         """)
+        conn.execute("""CREATE VIEW FilesWithCommonDisks AS
+                        SELECT DISTINCT FOD1.file_id AS file_id1, FOD2.file_id AS file_id2, FOD1.disk_id AS disk_id 
+                        FROM FilesOFDisk AS FOD1, FilesOFDisk AS FOD2
+                        WHERE (FOD1.disk_id = FOD2.disk_id
+                               AND FOD1.file_id != FOD2.file_id)
+                        ORDER BY file_id1 ASC;  
+                        """)
+        conn.execute("""CREATE VIEW CommonDisksCount AS
+                        SELECT FilesWithCommonDisks.file_id1 as file_id, FilesWithCommonDisks.file_id2 as shared_file_id, COUNT(FilesWithCommonDisks.disk_id) as sharedDisksCount
+                        FROM FilesWithCommonDisks
+                        GROUP BY FilesWithCommonDisks.file_id1, FilesWithCommonDisks.file_id2
+                        ORDER BY file_id ASC  
+                        """)
+
+        conn.execute("""CREATE VIEW CommonVSTotalDisks AS
+                        SELECT CommonDisksCount.file_id, CommonDisksCount.shared_file_id, CommonDisksCount.shareddiskscount,  count(filesOfDisk.disk_id) as totalDisks
+                        FROM CommonDisksCount, filesOfDisk
+                        WHERE CommonDisksCount.file_id = filesOfDisk.file_id
+                        GROUP BY CommonDisksCount.file_id, CommonDisksCount.shared_file_id, CommonDisksCount.shareddiskscount  
+                        """)
 
 
 
@@ -106,8 +126,11 @@ def dropTables():
     conn = None
     try:
         conn = Connector.DBConnector()
-        conn.execute("DROP VIEW IF EXISTS RAMSizeOFDisk ")
-        conn.execute("DROP VIEW IF EXISTS PotentialFilesForDisk ")
+        conn.execute("DROP VIEW IF EXISTS RAMSizeOFDisk")
+        conn.execute("DROP VIEW IF EXISTS PotentialFilesForDisk")
+        conn.execute("DROP VIEW IF EXISTS FilesWithCommonDisks")
+        conn.execute("DROP VIEW IF EXISTS CommonDisksCount")
+        conn.execute("DROP VIEW IF EXISTS CommonVSTotalDisks")
         conn.execute("DROP TABLE IF EXISTS Files CASCADE")
         conn.execute("DROP TABLE IF EXISTS Disks CASCADE")
         conn.execute("DROP TABLE IF EXISTS RAMs CASCADE")

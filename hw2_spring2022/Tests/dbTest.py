@@ -304,9 +304,39 @@ class Test(AbstractTest):
 
         self.assertEqual([6, 5, 4, 3, 2], Solution.mostAvailableDisks(), "Should work")
 
-        # self.assertEqual([1,2,3,4,5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work")
+        # close disks
 
-        # disk and ram relationaship
+
+            #file 1 - disks 1,2,3,4,5,6
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 2), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 3), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 4), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 5), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 6), "Should work")
+
+            #file 2 - disks 2,4,6
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 2), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 4), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 6), "Should work")
+
+            # file 3 - disks 1,3,5,6
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 3), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 5), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 6), "Should work")
+
+            # file 4 - disks 1,2,3
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 2), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 3), "Should work")
+
+            # file 5 - disks 4,5,6
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 4), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 5), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 6), "Should work")
+
+            #files 6, 11-16 - not saves
 
         pass
 
