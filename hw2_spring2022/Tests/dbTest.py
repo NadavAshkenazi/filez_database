@@ -39,12 +39,12 @@ class Test(AbstractTest):
 
     def test_all(self) -> None:
         # objects
-        disk1 = Disk(1, "DELL", 10, 10, 10)
-        disk2 = Disk(2, "DELL", 20, 20, 20)
-        disk3 = Disk(3, "DELL", 30, 30, 30)
-        disk4 = Disk(4, "TRANSCEND", 40, 40, 40)
-        disk5 = Disk(5, "TRANSCEND", 50, 50, 50)
-        disk6 = Disk(6, "TRANSCEND", 60, 60, 60)
+        disk1 = Disk(1, "DELL", 10, 10, 1)
+        disk2 = Disk(2, "DELL", 20, 20, 2)
+        disk3 = Disk(3, "DELL", 30, 30, 3)
+        disk4 = Disk(4, "TRANSCEND", 40, 40, 4)
+        disk5 = Disk(5, "TRANSCEND", 50, 50, 5)
+        disk6 = Disk(6, "TRANSCEND", 60, 60, 6)
 
         RAM1 = RAM(1, "Kingston", 10)
         RAM2 = RAM(2, "Kingston", 20)
@@ -57,8 +57,8 @@ class Test(AbstractTest):
         file2 = File(2, "wav", 2)
         file3 = File(3, "wav", 3)
         file4 = File(4, "mp4", 4)
-        file5 = File(5, "mp4", 5)
-        file6 = File(6, "mp4", 6)
+        file5 = File(5, "txt", 5)
+        file6 = File(6, "wav", 6)
 
         # disks
         self.assertEqual(Status.OK, Solution.addDisk(disk1), "Should work")
@@ -133,11 +133,40 @@ class Test(AbstractTest):
         self.assertEqual(Status.NOT_EXISTS, Solution.addFileToDisk(file6, 6), "FILE 6 DELETED")
         self.assertEqual(2, Solution.averageFileSizeOnDisk(6), "Should work - files 1,2,3")
         self.assertEqual(4, Solution.averageFileSizeOnDisk(5), "Should work - files 4")
-        self.assertEqual(0, Solution.averageFileSizeOnDisk(4), "NO FILES ON DISK 4")
+        self.assertEqual(0, Solution.averageFileSizeOnDisk(1), "NO FILES ON DISK 1")
         self.assertEqual(0, Solution.averageFileSizeOnDisk(7), "NO DISK 7")
         self.assertEqual(-1, Solution.averageFileSizeOnDisk("SIX"), "KEY MUST BE INTEGER")
 
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 4), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 4), "Should work")
+        self.assertEqual(40, Solution.getCostForType("wav"), "Should work - 4*(1) + 6*(1+2+3) = 40")
+        self.assertEqual(20, Solution.getCostForType("mp4"), "Should work - 5*(4) = 20")
+        self.assertEqual(20, Solution.getCostForType("txt"), "Should work - 4*(5) = 20")
+        self.assertEqual(0, Solution.getCostForType("pdf"), "PDF does not exist")
+        self.assertEqual(-1, Solution.getCostForType(1), "type should be string")
 
+        self.assertEqual(Status.OK, Solution.addFile(file6), "Should work")
+        self.assertEqual([6,5,4,3,2], Solution.getFilesCanBeAddedToDisk(6), "Should work")
+
+        disk7 = Disk(7, "TRANSCEND", 60, 4, 7)
+        self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
+        self.assertEqual([4,3,2,1], Solution.getFilesCanBeAddedToDisk(7), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
+
+
+        disk7 = Disk(7, "TRANSCEND", 60, 1, 7)
+        self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 7), "Should work")
+        self.assertEqual([], Solution.getFilesCanBeAddedToDisk(7), "NO FREE SPACE ON DISK 7")
+        self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
+        self.assertEqual([], Solution.getFilesCanBeAddedToDisk(8), "NO DISK 8")
+        self.assertEqual([], Solution.getFilesCanBeAddedToDisk("SIX"), "KEY SHOULD BE INTEGER")
+
+
+
+
+
+        pass
 
         #disk and ram relationaship
 
@@ -152,6 +181,10 @@ class Test(AbstractTest):
         self.assertEqual(Status.NOT_EXISTS, Solution.removeRAMFromDisk(6, 6), "NO RAM 6")
         self.assertEqual(90, Solution.diskTotalRAM(6), "Should work")
 
+
+        # self.assertEqual([1,2,3,4,5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work")
+
+        #disk and ram relationaship
 
         pass
 

@@ -579,18 +579,18 @@ def getCostForType(type: str) -> int:
         conn = Connector.DBConnector()
         query = sql.SQL("""
                          BEGIN;
-                         SELECT SUM(Disks.cost * Files.size)
+                         SELECT SUM(Disks.cost * Files.size_needed)
                          FROM Disks, Files, FilesOfDisk
-                         WHERE Disks.id = FilesOfDisk.RAM_id
-                             AND FilesOfDisk.Disk_id = Files.id
+                         WHERE Disks.id = FilesOfDisk.Disk_id
+                             AND FilesOfDisk.File_id = Files.id
                              AND Files.type = {type};
-                         COMMIT;
                          """).format(type=sql.Literal(type))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
             cost = 0
         else:
             cost = result.rows[0][0]
+        conn.commit()
     except Exception as e:
         cost = -1
     finally:
@@ -605,18 +605,19 @@ def getFilesCanBeAddedToDisk(diskID: int) -> List[int]:
         conn = Connector.DBConnector()
         query = sql.SQL("""
                              BEGIN;
-                             SELECT File.id
+                             SELECT Files.id AS id
                              FROM Disks, Files
                              WHERE Files.size_needed <= Disks.free_space
                                 AND Disks.id = {disk_id}
+                             ORDER BY id DESC
                              LIMIT 5;
-                             COMMIT;
                              """).format(disk_id=sql.Literal(diskID))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
             fileIDsList = []
         else:
             fileIDsList = [x[0] for x in result.rows]
+        conn.commit()
     except Exception as e:
         fileIDsList = []
     finally:
@@ -630,20 +631,21 @@ def getFilesCanBeAddedToDiskAndRAM(diskID: int) -> List[int]:
     try:
         conn = Connector.DBConnector()
         query = sql.SQL("""BEGIN;
-                             SELECT File.id
+                             SELECT File.id AS id
                              FROM Disks, Files, RAMSizeOFDisk
                              WHERE (Files.size_needed <= Disks.free_space
                                     AND Disks.id = {disk_id})
                                 OR (Files.size_needed <= RAMSizeOFDisk.totalRAMSize
                                     AND RAMsOfDisk.Disk_id = {disk_id})
+                             ORDER BY id ASC
                              LIMIT 5;      
-                             COMMIT;
                              """).format(disk_id=sql.Literal(diskID))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
             fileIDsList = []
         else:
             fileIDsList = [x[0] for x in result.rows]
+        conn.commit()
     except Exception as e:
         fileIDsList = []
     finally:
