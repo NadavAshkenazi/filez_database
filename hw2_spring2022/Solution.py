@@ -43,7 +43,7 @@ def createTables():
         conn.execute("""CREATE TABLE FilesOfDisk(
                     File_id INTEGER NOT NULL REFERENCES Files(id) ON DELETE CASCADE,
                     Disk_id INTEGER NOT NULL REFERENCES Disks(id) ON DELETE CASCADE,
-                    PRIMARY KEY(File_id));
+                    PRIMARY KEY(File_id, Disk_id));
                     """)
 
         conn.execute("""CREATE TABLE RAMsOfDisk(
@@ -402,9 +402,9 @@ def addFileToDisk(file: File, diskID: int) -> Status:
         query = sql.SQL("""BEGIN;
                             UPDATE Disks
                             set free_space = Disks.free_space - 
-                                (SELECT Files.size_needed
+                                COALESCE((SELECT Files.size_needed
                                 FROM Files
-                                WHERE Files.id = {file_ID})
+                                WHERE Files.id = {file_ID}), 0)
                             WHERE Disks.id = {disk_ID};
                                                 
                             INSERT INTO FilesOfDisk(File_id, Disk_id)
@@ -425,6 +425,10 @@ def addFileToDisk(file: File, diskID: int) -> Status:
 
     except DatabaseException.UNIQUE_VIOLATION as e:
         ret = Status.ALREADY_EXISTS
+        conn.rollback()
+
+    except DatabaseException.FOREIGN_KEY_VIOLATION:
+        ret = Status.NOT_EXISTS
         conn.rollback()
 
     except Exception as e:
@@ -472,17 +476,21 @@ def addRAMToDisk(ramID: int, diskID: int) -> Status:
         conn = Connector.DBConnector()
         query = sql.SQL("""BEGIN;
                             INSERT INTO RAMsOfDisk(RAM_id, Disk_id)
-                            VALUES ({ram_id}, {});
-                            COMMIT;""").format(ram_id=sql.Literal(ramID), disk_id=sql.Literal(diskID))
+                            VALUES ({ram_id}, {disk_id});
+                            """).format(ram_id=sql.Literal(ramID), disk_id=sql.Literal(diskID))
         rows_effected, _ = conn.execute(query)
         if rows_effected == 0:
             ret = Status.NOT_EXISTS
-
+        conn.commit()
     except DatabaseException.UNIQUE_VIOLATION:
         ret = Status.ALREADY_EXISTS
         conn.rollback()
 
-    except Exception:
+    except DatabaseException.FOREIGN_KEY_VIOLATION:
+        ret = Status.NOT_EXISTS
+        conn.rollback()
+
+    except Exception as e:
         ret = Status.ERROR
         conn.rollback()
 
@@ -499,11 +507,11 @@ def removeRAMFromDisk(ramID: int, diskID: int) -> Status:
         query = sql.SQL("""BEGIN;
                             DELETE FROM RAMsOfDisk
                             WHERE RAM_id={ram_id} and Disk_id={disk_id};
-                            COMMIT;""").format(ram_id=sql.Literal(ramID), disk_id=sql.Literal(diskID))
+                            """).format(ram_id=sql.Literal(ramID), disk_id=sql.Literal(diskID))
         rows_effected, _ = conn.execute(query)
         if rows_effected == 0:
             ret = Status.NOT_EXISTS
-
+        conn.commit()
     except Exception:
         ret = Status.ERROR
         conn.rollback()
@@ -524,13 +532,14 @@ def averageFileSizeOnDisk(diskID: int) -> float:
                         FROM Files, FilesOfDisk
                         WHERE Files.id = FilesOfDisk.File_id
                             AND FilesOfDisk.Disk_id = {disk_id};
-                        COMMIT;
+                        
                         """).format(disk_id=sql.Literal(diskID))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
             average = 0
         else:
             average = result.rows[0][0]
+        conn.commit()
     except Exception as e:
         average = -1
     finally:
@@ -548,15 +557,16 @@ def diskTotalRAM(diskID: int) -> int:
                         SELECT totalRAMSize
                         FROM RAMSizeOFDisk
                         WHERE RAMSizeOFDisk.Disk_id = {disk_id};
-                        COMMIT;
                         """).format(disk_id=sql.Literal(diskID))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
             total = 0
         else:
             total = result.rows[0][0]
+        conn.commit()
     except Exception as e:
         total = -1
+        conn.rollback()
     finally:
         conn.close()
         return total
