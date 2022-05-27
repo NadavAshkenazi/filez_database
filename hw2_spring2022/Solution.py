@@ -92,7 +92,18 @@ def createTables():
                         GROUP BY CommonDisksCount.file_id, CommonDisksCount.shared_file_id, CommonDisksCount.shareddiskscount  
                         """)
 
-
+        # close files union with empty way close files (files not on disks are close to every file)
+        conn.execute("""CREATE VIEW isCloseFiles AS
+						SELECT file_id, shared_file_id, (shareddiskscount *2 >= totalDisks) as isClose
+                        FROM CommonVSTotalDisks
+						
+						UNION 
+						
+						(SELECT F1.id as file_id, F2.id as shared_file_id, true as isClose
+						FROM FILES F1, FILES F2
+						WHERE (F1.id not in (SELECT file_id from FilesOfDisk) AND F1.id != F2.id))
+						        
+                        """)
 
 
         conn.commit()
@@ -126,11 +137,13 @@ def dropTables():
     conn = None
     try:
         conn = Connector.DBConnector()
-        conn.execute("DROP VIEW IF EXISTS RAMSizeOFDisk")
-        conn.execute("DROP VIEW IF EXISTS PotentialFilesForDisk")
-        conn.execute("DROP VIEW IF EXISTS FilesWithCommonDisks")
-        conn.execute("DROP VIEW IF EXISTS CommonDisksCount")
-        conn.execute("DROP VIEW IF EXISTS CommonVSTotalDisks")
+        conn.execute("DROP VIEW IF EXISTS RAMSizeOFDisk CASCADE")
+        conn.execute("DROP VIEW IF EXISTS PotentialFilesForDisk CASCADE")
+        conn.execute("DROP VIEW IF EXISTS FilesWithCommonDisks CASCADE")
+        conn.execute("DROP VIEW IF EXISTS CommonDisksCount CASCADE")
+        conn.execute("DROP VIEW IF EXISTS CommonVSTotalDisks CASCADE")
+        conn.execute("DROP VIEW IF EXISTS isCloseFiles CASCADE")
+
         conn.execute("DROP TABLE IF EXISTS Files CASCADE")
         conn.execute("DROP TABLE IF EXISTS Disks CASCADE")
         conn.execute("DROP TABLE IF EXISTS RAMs CASCADE")
@@ -778,4 +791,29 @@ def mostAvailableDisks() -> List[int]:
 
 
 def getCloseFiles(fileID: int) -> List[int]:
+    
+    conn = None
+    closeFiles = []
+    try:
+        conn = Connector.DBConnector()
+        query = sql.SQL(""" BEGIN;
+                            SELECT shared_file_id
+                            FROM isclosefiles
+                            WHERE isClose = true
+                                    AND file_id = {file_id}
+                            ORDER BY shared_file_id ASC
+                            LIMIT 10;
+                             """).format(file_id=sql.Literal(fileID))
+        _, result = conn.execute(query)
+        if result.rows[0][0] == None:
+            closeFiles = []
+        else:
+            closeFiles = [x[0] for x in result.rows]
+        conn.commit()
+    except Exception as e:
+        closeFiles = []
+    finally:
+        conn.close()
+        return closeFiles
+
     return []

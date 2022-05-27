@@ -304,7 +304,7 @@ class Test(AbstractTest):
 
         self.assertEqual([6, 5, 4, 3, 2], Solution.mostAvailableDisks(), "Should work")
 
-        # close disks
+        # close files
 
 
             #file 1 - disks 1,2,3,4,5,6
@@ -336,7 +336,23 @@ class Test(AbstractTest):
         self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 5), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 6), "Should work")
 
-            #files 6, 11-16 - not saves
+            #files 6 - not saves
+
+        self.assertEqual([2,3,4,5], Solution.getCloseFiles(1), "Should work")
+        self.assertEqual([1,2,3,4,5], Solution.getCloseFiles(6), "Should work")
+        self.assertEqual([1, 5], Solution.getCloseFiles(2), "Should work")
+
+        # files 6 - disks 11
+
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file6, 16), "Should work")
+        self.assertEqual([], Solution.getCloseFiles(6), "no shared disks")
+
+        # files 6 - disks 16,17, file1 1-6, 17
+        disk17 = Disk(17, "DELL", 100, 100, 100)
+        self.assertEqual(Status.OK, Solution.addDisk(disk17), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 17), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file6, 17), "Should work")
+        self.assertEqual([1], Solution.getCloseFiles(6), "out of 2 disks sharing disk17 with file1")
 
         pass
 
