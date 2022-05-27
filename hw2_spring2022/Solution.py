@@ -64,8 +64,16 @@ def createTables():
                         FROM  RAMs, RAMsOfDisk
                         WHERE RAMs.id = RAMsOfDisk.RAM_id
                         GROUP BY RAMsOfDisk.Disk_id;
-                        COMMIT;
                         """)
+
+        conn.execute("""CREATE VIEW PotentialFilesForDisk AS
+                        SELECT DISTINCT Disks.id as Disk_id, Files.id AS File_id
+                        FROM Disks, Files
+                        WHERE Files.size_needed <= Disks.free_space;
+                        """)
+
+
+
 
         conn.commit()
     except Exception as e:
@@ -86,7 +94,6 @@ def clearTables():
         conn.execute("DELETE FROM RAMsOfDisk")
         conn.execute("DELETE FROM DisksCheck")
 
-
         conn.commit()
     except Exception as e:
         print(e)
@@ -100,6 +107,7 @@ def dropTables():
     try:
         conn = Connector.DBConnector()
         conn.execute("DROP VIEW IF EXISTS RAMSizeOFDisk ")
+        conn.execute("DROP VIEW IF EXISTS PotentialFilesForDisk ")
         conn.execute("DROP TABLE IF EXISTS Files CASCADE")
         conn.execute("DROP TABLE IF EXISTS Disks CASCADE")
         conn.execute("DROP TABLE IF EXISTS RAMs CASCADE")
@@ -614,12 +622,11 @@ def getFilesCanBeAddedToDisk(diskID: int) -> List[int]:
         conn = Connector.DBConnector()
         query = sql.SQL("""
                              BEGIN;
-                             SELECT DISTINCT Files.id AS id
-                             FROM Disks, Files
-                             WHERE Files.size_needed <= Disks.free_space
-                                AND Disks.id = {disk_id}
+                             SELECT DISTINCT potentialFilesForDisk.file_id AS id
+                             FROM potentialFilesForDisk
+                             WHERE (potentialFilesForDisk.disk_id = {disk_id})
                              ORDER BY id DESC
-                             LIMIT 5;
+                             LIMIT 5;  
                              """).format(disk_id=sql.Literal(diskID))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
@@ -660,7 +667,7 @@ def getFilesCanBeAddedToDiskAndRAM(diskID: int) -> List[int]:
     finally:
         conn.close()
         return fileIDsList
-    return []
+
 
 
 def isCompanyExclusive(diskID: int) -> bool:
@@ -696,11 +703,55 @@ def isCompanyExclusive(diskID: int) -> bool:
 
 
 def getConflictingDisks() -> List[int]:
-    return []
+    conn = None
+    conflictingDisks = []
+    try:
+        conn = Connector.DBConnector()
+        query = sql.SQL("""BEGIN;
+                             SELECT DISTINCT FOD1.disk_id AS id
+                             FROM FilesOFDisk AS FOD1, FilesOFDisk AS FOD2
+                             WHERE (FOD1.disk_id != FOD2.disk_id
+                                    AND FOD1.file_id = FOD2.file_id)
+                             ORDER BY id ASC;  
+                             """)
+        _, result = conn.execute(query)
+        if result.rows[0][0] == None:
+            conflictingDisks = []
+        else:
+            conflictingDisks = [x[0] for x in result.rows]
+        conn.commit()
+    except Exception as e:
+        conflictingDisks = []
+    finally:
+        conn.close()
+        return conflictingDisks
+
 
 
 def mostAvailableDisks() -> List[int]:
-    return []
+    conn = None
+    availableDisks = []
+    try:
+        conn = Connector.DBConnector()
+        query = sql.SQL("""BEGIN;
+                             SELECT potentialFilesForDisk.disk_id AS disk_id, COUNT(potentialFilesForDisk.file_id) as filesCount, Disks.speed
+                             FROM potentialFilesForDisk, Disks
+                             WHERE (potentialFilesForDisk.disk_id = Disks.id)
+                             GROUP BY potentialFilesForDisk.disk_id, Disks.speed
+                             ORDER BY filesCount DESC, speed DESC, disk_id ASC
+                             LIMIT 5;
+                             """)
+        _, result = conn.execute(query)
+        if result.rows[0][0] == None:
+            availableDisks = []
+        else:
+            availableDisks = [x[0] for x in result.rows]
+        conn.commit()
+    except Exception as e:
+        availableDisks = []
+    finally:
+        conn.close()
+        return availableDisks
 
 
 def getCloseFiles(fileID: int) -> List[int]:
