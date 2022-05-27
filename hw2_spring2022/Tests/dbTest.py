@@ -46,12 +46,12 @@ class Test(AbstractTest):
         disk5 = Disk(5, "TRANSCEND", 50, 50, 5)
         disk6 = Disk(6, "TRANSCEND", 60, 60, 6)
 
-        RAM1 = RAM(1, "Kingston", 10)
-        RAM2 = RAM(2, "Kingston", 20)
-        RAM3 = RAM(3, "Kingston", 30)
-        RAM4 = RAM(4, "DELL", 40)
-        RAM5 = RAM(5, "DELL", 50)
-        RAM6 = RAM(6, "DELL", 60)
+        RAM1 = RAM(1, "DELL", 1)
+        RAM2 = RAM(2, "DELL", 2)
+        RAM3 = RAM(3, "DELL", 3)
+        RAM4 = RAM(4, "Kingston", 4)
+        RAM5 = RAM(5, "Kingston", 5)
+        RAM6 = RAM(6, "Kingston", 6)
 
         file1 = File(1, "wav", 1)
         file2 = File(2, "wav", 2)
@@ -88,12 +88,11 @@ class Test(AbstractTest):
         self.assertEqual(Status.ALREADY_EXISTS, Solution.addFile(file3),
                          "ID 3 already exists")
 
-        #deletes
+        # deletes
         self.assertEqual(6, Solution.getDiskByID(6).getDiskID(), "Should work")
         self.assertEqual(Status.OK, Solution.deleteDisk(6), "Should work")
         self.assertEqual(Disk.badDisk().getDiskID(), Solution.getDiskByID(6).getDiskID(), "NO DISK 6")
         self.assertEqual(Status.NOT_EXISTS, Solution.deleteDisk(6), "NO DISK 6")
-
 
         self.assertEqual(6, Solution.getRAMByID(6).getRamID(), "Should work")
         self.assertEqual(Status.OK, Solution.deleteRAM(6), "Should work")
@@ -103,14 +102,24 @@ class Test(AbstractTest):
         self.assertEqual(6, Solution.getFileByID(6).getFileID(), "Should work")
         self.assertEqual(Status.OK, Solution.deleteFile(file6), "Should work")
         self.assertEqual(File.badFile().getFileID(), Solution.getFileByID(6).getFileID(), "NO File 6")
-        self.assertEqual(Status.ERROR, Solution.deleteFile(6), "NO File 6")
+        self.assertEqual(Status.ERROR, Solution.deleteFile(Solution), "NO File 6")
 
-        #disk and file relationaship
+        # disk and file relationship
 
         self.assertEqual(Status.OK, Solution.addDiskAndFile(disk6, file6), "Should work")
+
+        self.assertEqual(Status.ALREADY_EXISTS, Solution.addDiskAndFile(disk5, file5), "diskId 5 and fileId 5 already defined")
+        self.assertEqual(Status.ALREADY_EXISTS, Solution.addDiskAndFile(disk5, file6), "diskId 5 already defined")
+        self.assertEqual(Status.ALREADY_EXISTS, Solution.addDiskAndFile(disk6, file5), "fileId 5 already defined")
+
+        file7 = File(7, "wav", 7)
+        self.assertEqual(Status.NOT_EXISTS, Solution.addFileToDisk(file7, 6), "NO FILE 7 IN FILES")
+
         self.assertEqual(Status.OK, Solution.addFileToDisk(file6, 6), "Should work")
         self.assertEqual(54, Solution.getDiskByID(6).getFreeSpace(), "Should work")
+        self.assertEqual(Status.OK, Solution.removeFileFromDisk(file7, 6), "Should work - file 7 not on disk")
         self.assertEqual(Status.OK, Solution.removeFileFromDisk(file6, 6), "Should work")
+
         self.assertEqual(60, Solution.getDiskByID(6).getFreeSpace(), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file6, 6), "Should work")
         self.assertEqual(54, Solution.getDiskByID(6).getFreeSpace(), "Should work")
@@ -146,13 +155,16 @@ class Test(AbstractTest):
         self.assertEqual(-1, Solution.getCostForType(1), "type should be string")
 
         self.assertEqual(Status.OK, Solution.addFile(file6), "Should work")
-        self.assertEqual([6,5,4,3,2], Solution.getFilesCanBeAddedToDisk(6), "Should work")
+        self.assertEqual([6, 5, 4, 3, 2], Solution.getFilesCanBeAddedToDisk(6), "Should work")
 
         disk7 = Disk(7, "TRANSCEND", 60, 4, 7)
         self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
-        self.assertEqual([4,3,2,1], Solution.getFilesCanBeAddedToDisk(7), "Should work")
+        self.assertEqual([4, 3, 2, 1], Solution.getFilesCanBeAddedToDisk(7), "Should work")
         self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
 
+        file11 = File(11, "wav", 11)
+        self.assertEqual(Status.OK, Solution.addFile(file11), "Should work")
+        self.assertEqual(Status.BAD_PARAMS, Solution.addFileToDisk(file11, 1), "NO SPACE")
 
         disk7 = Disk(7, "TRANSCEND", 60, 1, 7)
         self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
@@ -162,29 +174,68 @@ class Test(AbstractTest):
         self.assertEqual([], Solution.getFilesCanBeAddedToDisk(8), "NO DISK 8")
         self.assertEqual([], Solution.getFilesCanBeAddedToDisk("SIX"), "KEY SHOULD BE INTEGER")
 
-
-
-
-
         pass
 
-        #disk and ram relationaship
+        # disk and ram relationship
 
         self.assertEqual(Status.OK, Solution.addRAMToDisk(2, 6), "Should work")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(3, 6), "Should work")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(4, 6), "Should work")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(5, 6), "Should work")
+        self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(2, 5), "RAM 2 ON DISK 6 ALREADY")
+
         self.assertEqual(Status.NOT_EXISTS, Solution.addRAMToDisk(6, 6), "NO RAM 6")
-        self.assertEqual(140, Solution.diskTotalRAM(6), "Should work")
+        self.assertEqual(14, Solution.diskTotalRAM(6), "Should work")
         self.assertEqual(Status.OK, Solution.removeRAMFromDisk(5, 6), "Should work")
         self.assertEqual(Status.NOT_EXISTS, Solution.removeRAMFromDisk(5, 6), "RAM 5 ALREADY REMOVED")
         self.assertEqual(Status.NOT_EXISTS, Solution.removeRAMFromDisk(6, 6), "NO RAM 6")
-        self.assertEqual(90, Solution.diskTotalRAM(6), "Should work")
+        self.assertEqual(9, Solution.diskTotalRAM(6), "Should work")
+        self.assertEqual([1, 2, 3, 4, 5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work")
 
+        disk7 = Disk(7, "TRANSCEND", 60, 1, 7)
+        self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 7), "Should work")
+        self.assertEqual(Status.OK, Solution.removeRAMFromDisk(2, 6), "Should work")
+        self.assertEqual(Status.OK, Solution.removeRAMFromDisk(3, 6), "Should work")
+        self.assertEqual(Status.OK, Solution.removeRAMFromDisk(4, 6), "Should work")
 
-        # self.assertEqual([1,2,3,4,5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 7), "Should work")
+        self.assertEqual(1, Solution.diskTotalRAM(7), "Should work - RAM 1 ON DISK 7")
+        self.assertEqual([1], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space + ram = 1")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(2, 7), "Should work")
+        self.assertEqual(3, Solution.diskTotalRAM(7), "Should work - RAM 1+2 ON DISK 7")
+        self.assertEqual([1, 2, 3], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space + ram = 3")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(4, 7), "Should work")
+        self.assertEqual([1, 2, 3, 4, 5], Solution.getFilesCanBeAddedToDiskAndRAM(7),
+                         "Should work - free space + ram = 7")
 
-        #disk and ram relationaship
+        RAM7 = RAM(7, "DELL",7)
+        self.assertEqual(Status.OK, Solution.addRAM(RAM7), "Should work")
+        self.assertEqual(7, Solution.diskTotalRAM(7), "Should work - RAM 1+2+4 ON DISK 7")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(7,7), "Should work - RAM 1+2+4 ON DISK 7")
+        self.assertEqual(14, Solution.diskTotalRAM(7), "Should work - RAM 1+2+4+7 ON DISK 7")
+        self.assertEqual(Status.OK, Solution.deleteRAM(7), "Should work")
+        self.assertEqual(7, Solution.diskTotalRAM(7), "Should work - RAM 1+2+4 ON DISK 7")
+
+        self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(1, 5), "RAM 2 ON DISK 7 ALREADY")
+        self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 5), "Should work")
+        self.assertEqual(Status.OK, Solution.removeRAMFromDisk(1, 5), "Should work")
+
+        self.assertEqual(Status.OK, Solution.addRAM(RAM6), "Should work")
+
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(2, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(3, 1), "Should work")
+
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(4, 4), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(5, 4), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(6, 4), "Should work")
+        self.assertEqual(True, Solution.isCompanyExclusive(1), "Should work - EXCLUSIVE")
+        self.assertEqual(False, Solution.isCompanyExclusive(4), "NOT EXCLUSIVE")
+        self.assertEqual(True, Solution.isCompanyExclusive(2), "Should work - NO RAMS ON 2")
+        self.assertEqual(False, Solution.isCompanyExclusive(10), "NO DISK 10")
+
 
         pass
 
@@ -192,6 +243,12 @@ class Test(AbstractTest):
 
 
 
+
+        # self.assertEqual([1,2,3,4,5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work")
+
+        # disk and ram relationaship
+
+        pass
 
 
 # *** DO NOT RUN EACH TEST MANUALLY ***

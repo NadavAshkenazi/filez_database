@@ -52,6 +52,11 @@ def createTables():
                     PRIMARY KEY(RAM_id));
                     """)
 
+        conn.execute("""CREATE TABLE DisksCheck(
+                    id INTEGER NOT NULL REFERENCES Disks(id) ON DELETE CASCADE,
+                    PRIMARY KEY(id));
+                    """)
+
         # === views ====
 
         conn.execute("""CREATE VIEW RAMSizeOFDisk AS
@@ -79,6 +84,8 @@ def clearTables():
         conn.execute("DELETE FROM RAMs")
         conn.execute("DELETE FROM FilesOfDisk")
         conn.execute("DELETE FROM RAMsOfDisk")
+        conn.execute("DELETE FROM DisksCheck")
+
 
         conn.commit()
     except Exception as e:
@@ -98,6 +105,8 @@ def dropTables():
         conn.execute("DROP TABLE IF EXISTS RAMs CASCADE")
         conn.execute("DROP TABLE IF EXISTS FilesOfDisk CASCADE")
         conn.execute("DROP TABLE IF EXISTS RAMsOfDisk CASCADE")
+        conn.execute("DROP TABLE IF EXISTS DisksCheck CASCADE")
+
         conn.commit()
     except Exception as e:
         print(e)
@@ -605,7 +614,7 @@ def getFilesCanBeAddedToDisk(diskID: int) -> List[int]:
         conn = Connector.DBConnector()
         query = sql.SQL("""
                              BEGIN;
-                             SELECT Files.id AS id
+                             SELECT DISTINCT Files.id AS id
                              FROM Disks, Files
                              WHERE Files.size_needed <= Disks.free_space
                                 AND Disks.id = {disk_id}
@@ -631,12 +640,12 @@ def getFilesCanBeAddedToDiskAndRAM(diskID: int) -> List[int]:
     try:
         conn = Connector.DBConnector()
         query = sql.SQL("""BEGIN;
-                             SELECT File.id AS id
+                             SELECT DISTINCT Files.id AS id
                              FROM Disks, Files, RAMSizeOFDisk
                              WHERE (Files.size_needed <= Disks.free_space
                                     AND Disks.id = {disk_id})
                                 OR (Files.size_needed <= RAMSizeOFDisk.totalRAMSize
-                                    AND RAMsOfDisk.Disk_id = {disk_id})
+                                    AND RAMSizeOFDisk.Disk_id = {disk_id})
                              ORDER BY id ASC
                              LIMIT 5;      
                              """).format(disk_id=sql.Literal(diskID))
@@ -659,24 +668,28 @@ def isCompanyExclusive(diskID: int) -> bool:
     isExclusive = False
     try:
         conn = Connector.DBConnector()
-        query = sql.SQL(f"""
+        query = sql.SQL("""
                              BEGIN;
-                             SELECT DISTINCT RAMSOFDisk.company
+                             INSERT INTO DisksCheck(id)
+                             VALUES({disk_id});
+                             DELETE FROM DisksCheck WHERE id=({disk_id});
+                             SELECT DISTINCT RAMs.company
                              FROM Disks, RAMSOFDisk, RAMs
                              WHERE (Disks.id = RAMSOFDisk.Disk_id
-                                    AND Disks.id == {disk_id})                            
-                                    AND RAMSOFDisk.RAM_id == RAMs.id
-                                    AND RAMs.company != Disks.company;
-                             COMMIT;
+                                    AND Disks.id = {disk_id}                            
+                                    AND RAMSOFDisk.RAM_id = RAMs.id
+                                    AND RAMs.company != Disks.company);
                              """).format(disk_id=sql.Literal(diskID))
-        _, result = conn.execute(query)
-        if result.rows[0][0] == None:
+        rows_effected, result = conn.execute(query)
+        if rows_effected == 0:
             isExclusive = True
         else:
             isExclusive = False
-            conn.rollback()
+        conn.commit()
     except Exception as e:
         isExclusive = False
+        conn.rollback()
+
     finally:
         conn.close()
         return isExclusive
