@@ -96,15 +96,14 @@ def createTables():
         conn.execute("""CREATE VIEW isCloseFiles AS
 						SELECT file_id, shared_file_id, (shareddiskscount *2 >= totalDisks) as isClose
                         FROM CommonVSTotalDisks
-						
+
 						UNION 
-						
+
 						(SELECT F1.id as file_id, F2.id as shared_file_id, true as isClose
 						FROM FILES F1, FILES F2
 						WHERE (F1.id not in (SELECT file_id from FilesOfDisk) AND F1.id != F2.id))
-						        
-                        """)
 
+                        """)
 
         conn.commit()
     except Exception as e:
@@ -165,12 +164,14 @@ def createDisk(query_result: tuple) -> Disk:
     return Disk(diskID=query_result[0], company=query_result[1], speed=query_result[2], free_space=query_result[3],
                 cost=query_result[4])
 
+
 def createFile(query_result: tuple) -> Disk:
     return File(fileID=query_result[0], type=query_result[1], size=query_result[2])
 
 
 def createRAM(query_result: tuple) -> Disk:
     return RAM(ramID=query_result[0], company=query_result[1], size=query_result[2])
+
 
 # ========= CRUD API ===========
 def addFile(file: File) -> Status:
@@ -242,7 +243,7 @@ def deleteFile(file: File) -> Status:  # todo: adjust free space
                                                 AND FilesOfDisk.File_id = Files.id 
                                                 AND Files.id = {fileID}), 0);
                             DELETE FROM Files WHERE id=({fileID});
-                            
+
                             """).format(fileID=sql.Literal(file.getFileID()))
         rows_effected, _ = conn.execute(query)
         if rows_effected == 0:
@@ -300,7 +301,7 @@ def getDiskByID(diskID: int) -> Disk:
                            SELECT *
                            FROM Disks
                            WHERE id = {id};
-                           
+
                            """).format(id=sql.Literal(diskID))
         rows_effected, result = conn.execute(query)
         if rows_effected == 0:
@@ -459,7 +460,7 @@ def addFileToDisk(file: File, diskID: int) -> Status:
                                 FROM Files
                                 WHERE Files.id = {file_ID}), 0)
                             WHERE Disks.id = {disk_ID};
-                                                
+
                             INSERT INTO FilesOfDisk(File_id, Disk_id)
                             VALUES ({file_ID}, {disk_ID});
                             """).format(disk_ID=sql.Literal(diskID), file_ID=sql.Literal(file.getFileID()))
@@ -585,7 +586,7 @@ def averageFileSizeOnDisk(diskID: int) -> float:
                         FROM Files, FilesOfDisk
                         WHERE Files.id = FilesOfDisk.File_id
                             AND FilesOfDisk.Disk_id = {disk_id};
-                        
+
                         """).format(disk_id=sql.Literal(diskID))
         _, result = conn.execute(query)
         if result.rows[0][0] == None:
@@ -705,7 +706,6 @@ def getFilesCanBeAddedToDiskAndRAM(diskID: int) -> List[int]:
         return fileIDsList
 
 
-
 def isCompanyExclusive(diskID: int) -> bool:
     conn = None
     isExclusive = False
@@ -763,7 +763,6 @@ def getConflictingDisks() -> List[int]:
         return conflictingDisks
 
 
-
 def mostAvailableDisks() -> List[int]:
     conn = None
     availableDisks = []
@@ -791,7 +790,6 @@ def mostAvailableDisks() -> List[int]:
 
 
 def getCloseFiles(fileID: int) -> List[int]:
-    
     conn = None
     closeFiles = []
     try:
