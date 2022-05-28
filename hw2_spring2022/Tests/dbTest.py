@@ -37,6 +37,27 @@ class Test(AbstractTest):
         self.assertEqual(Status.ALREADY_EXISTS, Solution.addFile(File(3, "wav", 10)),
                          "ID 3 already exists")
 
+    def test_avg(self) -> None:
+        disk = Disk(1, "TRANSCEND", 40, 40, 4)
+
+        file1 = File(1, "wav", 1)
+        file2 = File(2, "wav", 2)
+        file3 = File(3, "wav", 3)
+        file4 = File(4, "mp4", 4)
+
+        self.assertEqual(Status.OK, Solution.addDisk(disk), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file2), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file3), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file4), "Should work")
+
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 1), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 1), "Should work")
+
+        self.assertEqual(2.5, Solution.averageFileSizeOnDisk(1), "Should work")
+
     def test_all(self) -> None:
         # objects
         disk1 = Disk(1, "DELL", 10, 10, 1)
@@ -304,10 +325,51 @@ class Test(AbstractTest):
 
         self.assertEqual([6, 5, 4, 3, 2], Solution.mostAvailableDisks(), "Should work")
 
-        # close files
+        disk21 = Disk(21, "DELL", 6, 101, 1)
+        disk22 = Disk(22, "DELL", 5, 90, 1)
+        disk23 = Disk(23, "DELL", 4, 103, 1)
+        disk24 = Disk(24, "DELL", 3, 104, 1)
+        disk25 = Disk(25, "DELL", 2, 105, 1)
+        disk26 = Disk(26, "DELL", 1, 106, 1)
 
+        file21 = File(21, "wav", 80)
+        file22 = File(22, "wav", 92)
+        file23 = File(23, "wav", 93)
+        file24 = File(24, "mp4", 94)
+        file25 = File(25, "txt", 95)
+        file26 = File(26, "wav", 101)
 
-            #file 1 - disks 1,2,3,4,5,6
+        self.assertEqual(Status.OK, Solution.addDiskAndFile(disk21, file21), "Should work")
+        self.assertEqual(Status.OK, Solution.addDiskAndFile(disk22, file22), "Should work")
+        self.assertEqual(Status.OK, Solution.addDiskAndFile(disk23, file23), "Should work")
+        self.assertEqual(Status.OK, Solution.addDiskAndFile(disk24, file24), "Should work")
+        self.assertEqual(Status.OK, Solution.addDiskAndFile(disk25, file25), "Should work")
+        self.assertEqual(Status.OK, Solution.addDiskAndFile(disk26, file26), "Should work")
+
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 26), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 26), "Should work")  # disk 26 - 101
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 25), "Should work")  # disk 25 - 100
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 21), "Should work")  # disk 21 - 100
+
+        self.assertEqual([23, 24, 26, 21, 25], Solution.mostAvailableDisks(), "Should work")
+
+        self.assertEqual(Status.OK, Solution.deleteFile(file21), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteFile(file22), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteFile(file23), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteFile(file24), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteFile(file25), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteFile(file26), "Should work")
+
+        self.assertEqual(Status.OK, Solution.deleteDisk(21), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteDisk(22), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteDisk(23), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteDisk(24), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteDisk(25), "Should work")
+        self.assertEqual(Status.OK, Solution.deleteDisk(26), "Should work")
+
+        # closeset files
+
+        # file 1 - disks 1,2,3,4,5,6
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 1), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 2), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 3), "Should work")
@@ -315,31 +377,31 @@ class Test(AbstractTest):
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 5), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 6), "Should work")
 
-            #file 2 - disks 2,4,6
+        # file 2 - disks 2,4,6
         self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 2), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 4), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file2, 6), "Should work")
 
-            # file 3 - disks 1,3,5,6
+        # file 3 - disks 1,3,5,6
         self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 1), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 3), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 5), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file3, 6), "Should work")
 
-            # file 4 - disks 1,2,3
+        # file 4 - disks 1,2,3
         self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 1), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 2), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file4, 3), "Should work")
 
-            # file 5 - disks 4,5,6
+        # file 5 - disks 4,5,6
         self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 4), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 5), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file5, 6), "Should work")
 
-            #files 6 - not saves
+        # files 6 - not saves
 
-        self.assertEqual([2,3,4,5], Solution.getCloseFiles(1), "Should work")
-        self.assertEqual([1,2,3,4,5], Solution.getCloseFiles(6), "Should work")
+        self.assertEqual([2, 3, 4, 5], Solution.getCloseFiles(1), "Should work")
+        self.assertEqual([1, 2, 3, 4, 5], Solution.getCloseFiles(6), "Should work")
         self.assertEqual([1, 5], Solution.getCloseFiles(2), "Should work")
 
         # files 6 - disks 11
@@ -353,6 +415,25 @@ class Test(AbstractTest):
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 17), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file6, 17), "Should work")
         self.assertEqual([1], Solution.getCloseFiles(6), "out of 2 disks sharing disk17 with file1")
+        self.assertEqual([], Solution.getCloseFiles("SIX"), "KEY SHOULD BE INTEGER")
+        self.assertEqual([], Solution.getCloseFiles(-1), "KEY SHOULD > 0")
+
+        self.assertEqual(Status.OK, Solution.removeFileFromDisk(file1, 17), "Should work")
+
+        file21 = File(21, "wav", 80)
+        file22 = File(22, "wav", 92)
+        file23 = File(23, "wav", 93)
+        file24 = File(24, "mp4", 94)
+        file25 = File(25, "txt", 95)
+        file26 = File(26, "wav", 101)
+
+        self.assertEqual(Status.OK, Solution.addFile(file21), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file22), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file23), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file24), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file25), "Should work")
+        self.assertEqual(Status.OK, Solution.addFile(file26), "Should work")
+        self.assertEqual([1, 2, 3, 4, 5, 6, 22, 23, 24, 25], Solution.getCloseFiles(21), "Should work")
 
         pass
 
