@@ -49,7 +49,7 @@ def createTables():
         conn.execute("""CREATE TABLE RAMsOfDisk(
                     RAM_id INTEGER NOT NULL REFERENCES RAMS(id) ON DELETE CASCADE,
                     Disk_id INTEGER NOT NULL REFERENCES Disks(id) ON DELETE CASCADE,
-                    PRIMARY KEY(RAM_id));
+                    PRIMARY KEY(RAM_id, Disk_id));
                     """)
 
         conn.execute("""CREATE TABLE DisksCheck(

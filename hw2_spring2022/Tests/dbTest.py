@@ -212,7 +212,9 @@ class Test(AbstractTest):
         self.assertEqual(Status.OK, Solution.addRAMToDisk(3, 6), "Should work")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(4, 6), "Should work")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(5, 6), "Should work")
-        self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(2, 5), "RAM 2 ON DISK 6 ALREADY")
+        self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(2, 6), "RAM 2 ON DISK 6 ALREADY")
+
+        # self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(2, 5), "RAM 2 ON DISK 6 ALREADY")
 
         self.assertEqual(Status.NOT_EXISTS, Solution.addRAMToDisk(6, 6), "NO RAM 6")
         self.assertEqual(14, Solution.diskTotalRAM(6), "Should work")
@@ -272,7 +274,7 @@ class Test(AbstractTest):
         self.assertEqual(Status.OK, Solution.deleteRAM(7), "Should work")
         self.assertEqual(7, Solution.diskTotalRAM(7), "Should work - RAM 1+2+4 ON DISK 7")
 
-        self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(1, 5), "RAM 2 ON DISK 7 ALREADY")
+        # self.assertEqual(Status.ALREADY_EXISTS, Solution.addRAMToDisk(1, 5), "RAM 2 ON DISK 7 ALREADY")
         self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 5), "Should work")
         self.assertEqual(Status.OK, Solution.removeRAMFromDisk(1, 5), "Should work")
