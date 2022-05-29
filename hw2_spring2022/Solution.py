@@ -246,8 +246,6 @@ def deleteFile(file: File) -> Status:  # todo: adjust free space
 
                             """).format(fileID=sql.Literal(file.getFileID()))
         rows_effected, _ = conn.execute(query)
-        if rows_effected == 0:
-            ret = Status.NOT_EXISTS
         conn.commit()
     except Exception as e:
         ret = Status.ERROR
@@ -688,7 +686,7 @@ def getFilesCanBeAddedToDiskAndRAM(diskID: int) -> List[int]:
                              FROM Disks, Files, RAMSizeOFDisk
                              WHERE (Files.size_needed <= Disks.free_space
                                     AND Disks.id = {disk_id})
-                                OR (Files.size_needed <= RAMSizeOFDisk.totalRAMSize
+                                AND (Files.size_needed <= RAMSizeOFDisk.totalRAMSize
                                     AND RAMSizeOFDisk.Disk_id = {disk_id})
                              ORDER BY id ASC
                              LIMIT 5;      

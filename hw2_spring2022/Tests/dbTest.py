@@ -128,7 +128,9 @@ class Test(AbstractTest):
         self.assertEqual(6, Solution.getFileByID(6).getFileID(), "Should work")
         self.assertEqual(Status.OK, Solution.deleteFile(file6), "Should work")
         self.assertEqual(File.badFile().getFileID(), Solution.getFileByID(6).getFileID(), "NO File 6")
-        self.assertEqual(Status.ERROR, Solution.deleteFile(Solution), "NO File 6")
+        self.assertEqual(Status.OK, Solution.deleteFile(file6), "NO File 6")
+        self.assertEqual(Status.ERROR, Solution.deleteFile("file6"), "should be file object")
+
 
         # disk and file relationship
 
@@ -218,9 +220,9 @@ class Test(AbstractTest):
         self.assertEqual(Status.NOT_EXISTS, Solution.removeRAMFromDisk(5, 6), "RAM 5 ALREADY REMOVED")
         self.assertEqual(Status.NOT_EXISTS, Solution.removeRAMFromDisk(6, 6), "NO RAM 6")
         self.assertEqual(9, Solution.diskTotalRAM(6), "Should work")
-        self.assertEqual([1, 2, 3, 4, 5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work")
+        self.assertEqual([1, 2, 3, 4, 5], Solution.getFilesCanBeAddedToDiskAndRAM(6), "Should work - free space 54, ramTotal - 9")
 
-        disk7 = Disk(7, "TRANSCEND", 60, 1, 7)
+        disk7 = Disk(7, "TRANSCEND", 60, 2, 7)
         self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
         self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 7), "Should work")
         self.assertEqual(Status.OK, Solution.removeRAMFromDisk(2, 6), "Should work")
@@ -229,13 +231,38 @@ class Test(AbstractTest):
 
         self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 7), "Should work")
         self.assertEqual(1, Solution.diskTotalRAM(7), "Should work - RAM 1 ON DISK 7")
-        self.assertEqual([1], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space + ram = 1")
+        self.assertEqual([1], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space 1, ram 1")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(2, 7), "Should work")
         self.assertEqual(3, Solution.diskTotalRAM(7), "Should work - RAM 1+2 ON DISK 7")
-        self.assertEqual([1, 2, 3], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space + ram = 3")
+        self.assertEqual([1], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space 1, ram = 3")
+        self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
+
+        disk7 = Disk(7, "TRANSCEND", 60, 8, 7)
+        self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 7), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 7), "Should work")
+        self.assertEqual(1, Solution.diskTotalRAM(7), "Should work - RAM 1 ON DISK 7")
+        self.assertEqual([1], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space 7, ram 1")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(2, 7), "Should work")
+        self.assertEqual(3, Solution.diskTotalRAM(7), "Should work - RAM 1+2 ON DISK 7")
+        self.assertEqual([1, 2, 3], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space 7, ram = 3")
         self.assertEqual(Status.OK, Solution.addRAMToDisk(4, 7), "Should work")
         self.assertEqual([1, 2, 3, 4, 5], Solution.getFilesCanBeAddedToDiskAndRAM(7),
-                         "Should work - free space + ram = 7")
+                         "Should work - free space 7, ram = 7")
+        self.assertEqual(Status.OK, Solution.deleteDisk(7), "Should work")
+
+        disk7 = Disk(7, "TRANSCEND", 60, 1, 7)
+        self.assertEqual(Status.OK, Solution.addDisk(disk7), "Should work")
+        self.assertEqual(Status.OK, Solution.addFileToDisk(file1, 7), "Should work")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(1, 7), "Should work")
+        self.assertEqual(1, Solution.diskTotalRAM(7), "Should work - RAM 1 ON DISK 7")
+        self.assertEqual([], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space 0, ram = 1")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(2, 7), "Should work")
+        self.assertEqual(3, Solution.diskTotalRAM(7), "Should work - RAM 1+2 ON DISK 7")
+        self.assertEqual([], Solution.getFilesCanBeAddedToDiskAndRAM(7), "Should work - free space 0, ram = 3")
+        self.assertEqual(Status.OK, Solution.addRAMToDisk(4, 7), "Should work")
+        self.assertEqual([], Solution.getFilesCanBeAddedToDiskAndRAM(7),
+                         "Should work - free space 0, ram = 7")
 
         RAM7 = RAM(7, "DELL", 7)
         self.assertEqual(Status.OK, Solution.addRAM(RAM7), "Should work")
